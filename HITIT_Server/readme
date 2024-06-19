@@ -1,0 +1,28 @@
+# 머신러닝 모델 + 서버
+
+sudo apt update # 초기에 업데이트
+sudo apt install python3-venv # 파이썬은 자동으로 깔려있으니 가상환경 만들수 있는 패키지 설치
+
+sudo python3 -m venv myenv # 가상환경 만들기
+
+source myenv/bin/activate  # 가상 환경 활성화
+
+sudo apt install python3-pip
+pip install --upgrade pip
+pip install jupyter
+pip install torch torchvision torchaudio
+pip install transformers
+
+pip3 install boto3
+pip3 install tensorflow
+
+
+
+ # 주피터 노트북 설치
+
+jupyter notebook # 주피터노트북 실행    
+jupyter notebook password # 이상한거 뜰텐데 이거로 비밀번호 설정 => jupyter_server_config.json 만들어진다
+
+pip install python-dotenv
+
+pip install mysql-connector-python

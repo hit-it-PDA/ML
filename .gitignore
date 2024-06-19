@@ -1,0 +1,18 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+
+# 환경 설정 파일
+*.env
+
+# 가상 환경 디렉터리
+venv/
+env/
+myenv/
+.ipynb_checkpoints/
+
+# 패키지
+*.egg-info/
+dist/
+build/
+.venv
