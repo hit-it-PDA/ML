@@ -16,8 +16,6 @@ pip install transformers
 pip3 install boto3
 pip3 install tensorflow
 
-
-
  # 주피터 노트북 설치
 
 jupyter notebook # 주피터노트북 실행    
@@ -26,3 +24,6 @@ jupyter notebook password # 이상한거 뜰텐데 이거로 비밀번호 설정
 pip install python-dotenv
 
 pip install mysql-connector-python
+
+print(os.getcwd())
+sys.path.append(os.path.join(os.getcwd(), 'app'))

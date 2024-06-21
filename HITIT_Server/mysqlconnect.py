@@ -1,10 +1,6 @@
 import mysql.connector
 import os
 from dotenv import load_dotenv
-import requests
-import asyncio
-import aiohttp
-import time
 
 # .env 파일 로드
 load_dotenv()
@@ -17,11 +13,11 @@ PASSWORD = os.getenv("PASSWORD")
 DATABASE = os.getenv("DATABASE")
 
 def connect_to_mysql():
-    print(USER)
+    print(f"USER: {USER}, HOST: {HOST}, PORT: {PORT}, DATABASE: {DATABASE}")
     try:
         connection = mysql.connector.connect(
             host=HOST,
-            port=PORT,
+            port=int(PORT),
             user=USER,
             password=PASSWORD,
             database=DATABASE
