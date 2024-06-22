@@ -1,5 +1,7 @@
 from flask import Flask, g
 from utils.sql.sqlconnect import get_sql_connection
+import joblib
+import os
 
 def create_app():
     print("__init__ in 'app' directory")
@@ -14,8 +16,10 @@ def create_app():
     
     @app.before_request
     def before_request():
+        model_path = '/home/ubuntu/code/DE_ML/HITIT_Server/RF/loaded_model'
+        g.classmodel = joblib.load(model_path)
+        print("model_loaded")
         g.connection = get_sql_connection()
-        # g.cursor = g.connection.cursor()
 
     # @app.teardown_appcontext
     # def close_db_connection(exception):
