@@ -11,7 +11,7 @@ fund_column_names = [
     'drv_nav', 'bond', 'bond_foreign', 'stock', 'stock_foreign', 'investment',
     'etc', 'return_1m', 'return_3m', 'return_6m', 'c', 'return_3y',
     'return_5y', 'return_idx', 'return_ytd', 'arima_price', 'arima_update',
-    'arima_percent'
+    'arima_percent', "stock_ratio", "bond_ratio"
 ]
 
 def funds_query_by_id(level, user_id, rand) : 
@@ -81,36 +81,45 @@ def main():
 
 @mydata.route('/funds',methods=['POST'])
 def getFunds():
-
+    print("mydata/funds")
     data = request.json
     user_id = data['user_id']
     
-    transactions, stockBalance = data['transactions'], data['stockBalance']
-    age, wealth = data['age'],data['wealth']
-    
+    transactions, stockBalance, age,  wealth = data['transactions'], data['stockBalance'], data['age'],data['wealth']
+
     classmodel = g.classmodel
     connection = g.connection
     cursor = connection.cursor()
     
     avg_per = calculate_average_per(stockBalance,cursor)
+    # avg_per = 12
     
-    avg_per = 12
     avg_trans_gap = calculate_average_holding_period(transactions)
-    
-    
-    print(transactions, stockBalance,age,wealth)
+    # avg_trans_gap = 20
     
     returned = classmodel.predict([[age,wealth,len(transactions),avg_per, avg_trans_gap]])
     
-    user_class = returned.tolist()[0]
-    query = funds_query_by_id(user_class)
-    
-    cursor.execute(query)
-    fetched_data = cursor.fetchall()
-    
-    data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
-    
-    return jsonify({"response" : data_dict})
+    user_class = returned.tolist()[0] + 1
+    print("user_class : ", user_class)
+    result_data = []
+    if user_class <= 3: #유저가 1,2,3이라면
+        for i in range(3) :
+            result = fetchs_funds(user_class, user_id, i,cursor)
+            result_data.append(result)
+    elif user_class == 4:
+        for i in range(2):
+            result = fetchs_funds(user_class, user_id, i,cursor)
+            result_data.append(result)
+        for i in range(1):
+            result = fetchs_funds(user_class, user_id, i, cursor)
+            result_data.append(result)       
+    else :
+        for i in range(3):
+            result = fetchs_funds(user_class, user_id, 0 , cursor)
+            result_data.append(result)    
+        
+    return jsonify({"response" : result_data})
+
 
 def get_two_bonds(user_id):
     order_list = ['return_1m','return_3m','return_6m','return_1y','return_3y','return_5y','return_idx','return_ytd','arima_percent']
@@ -118,7 +127,7 @@ def get_two_bonds(user_id):
     WITH company_funds AS (
     SELECT *, ROW_NUMBER() OVER (PARTITION BY company_name ORDER BY {order_list[user_id]} DESC) as row_num
     FROM fund_products_4
-    WHERE risk_grade = 6 AND bond_ratio = 100
+    WHERE risk_grade = 6 AND bond_ratio = 100 AND company_name <> '신한자산운용'
     )
     SELECT *
     FROM company_funds
@@ -182,22 +191,20 @@ def fetchs_funds(user_class, user_id, i, cursor):
     
     for elem in fetched_data2 :
         fetched_data.append(elem)
-    # print(fetched_data)
-    # print(fetched_data2)
-    # print()
-    
+        
+        
     data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
     result = {"fund_class" : category_mapping[user_class+i],"funds" : data_dict}
     return result
 
 @mydata.route('/fundss',methods=['POST'])
 def getFund() :
+    print("mydata/fundss")
     data = request.json
     user_id = data['user_id']
     user_level = data['level']
     
-    classmodel = g.classmodel
-    connection = g.connection
+    classmodel, connection = g.classmodel, g.connection
     cursor = connection.cursor()
     
     user_class = user_level
@@ -205,14 +212,6 @@ def getFund() :
     result_data = []
     if user_class <= 3: #유저가 1,2,3이라면
         for i in range(3) :
-            # query = funds_query_by_id_level(user_class,user_id, i)
-            
-            # cursor.execute(query)
-            # fetched_data = cursor.fetchall()
-            
-            # data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
-            # result = {"user_class" : category_mapping[user_class],"funds" : data_dict}
-            # result_data.append(result)
             result = fetchs_funds(user_class, user_id, i,cursor)
             result_data.append(result)
     elif user_class == 4:

@@ -3,33 +3,37 @@ from utils.sql.sqlconnect import get_sql_connection
 import joblib
 import os
 
+classmodel = None
+connection = None
+
 def create_app():
     print("__init__ in 'app' directory")
     app = Flask(__name__)
     
-    
-    
-    # def get_db_connection():
-    #     if 'connection' not in g:
-    #         g.connection = get_sql_connection()
-    #     return g.connection
-    
+    # 애플리케이션 초기화 시 한 번만 모델 로드
+    global classmodel
+    global connection
+
+    # 애플리케이션 초기화 시 한 번만 SQL 연결 설정
+    if connection is None:
+        connection = get_sql_connection()
+        print("SQL connection established")
+
+    if classmodel is None:
+        # model_path = '/home/ubuntu/code/DE_ML/HITIT_Server/RF/loaded_model'
+        model_path = '/home/ubuntu/code/DE_ML/HITIT_Server/My_data/loaded_model_0623.joblib'
+        classmodel = joblib.load(model_path)
+        print("model_loaded")
+
     @app.before_request
     def before_request():
-        model_path = '/home/ubuntu/code/DE_ML/HITIT_Server/RF/loaded_model'
-        g.classmodel = joblib.load(model_path)
-        print("model_loaded")
-        g.connection = get_sql_connection()
-
-    # @app.teardown_appcontext
-    # def close_db_connection(exception):
-    #     connection = g.pop('connection', None)
-    #     if connection is not None:
-    #         connection.close()
+        g.classmodel = classmodel
+        g.connection = connection
 
     from .ml.routes import ml
-    from .mydata.routes import mydata
-
+    from .rebel.routes import mydata
+    from .rebal.routes import rebel
+    
     app.register_blueprint(ml, url_prefix = "/ml")
     app.register_blueprint(mydata, url_prefix = "/mydata")
     

@@ -7,11 +7,9 @@ from datetime import datetime, timedelta
 
 warnings.filterwarnings('ignore')
 
-# 현재 파일의 경로
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# 상위 디렉터리 경로
 parent_dir = os.path.dirname(current_dir)
-# 상위 디렉터리를 sys.path에 추가
+
 sys.path.append(parent_dir)
 
 from mysqlconnect import connect_to_mysql
