@@ -112,6 +112,21 @@ def getFunds():
     
     return jsonify({"response" : data_dict})
 
+def get_two_bonds(user_id):
+    order_list = ['return_1m','return_3m','return_6m','return_1y','return_3y','return_5y','return_idx','return_ytd','arima_percent']
+    query =f"""
+    WITH company_funds AS (
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY company_name ORDER BY {order_list[user_id]} DESC) as row_num
+    FROM fund_products_4
+    WHERE risk_grade = 6 AND bond_ratio = 100
+    )
+    SELECT *
+    FROM company_funds
+    WHERE row_num = 1
+    ORDER BY {order_list[user_id]} DESC
+    LIMIT 2;
+    """
+    return query
 
 def funds_query_by_id_level(level, user_id, i) : 
     #9개 열 기준
@@ -139,7 +154,7 @@ def funds_query_by_id_level(level, user_id, i) :
         FROM RankedProducts
         WHERE rn = 1
         ORDER BY {order_list[user_id % 9]} DESC
-        LIMIT 4
+        LIMIT 2
     ) AS TopRankedProducts
     
     UNION ALL
@@ -154,13 +169,25 @@ def funds_query_by_id_level(level, user_id, i) :
     return query
 
 def fetchs_funds(user_class, user_id, i, cursor):
-    query = funds_query_by_id_level(user_class, user_id, i)
     
+    #주식말고 펀드 가져오기 쿼리
+    query = funds_query_by_id_level(user_class, user_id, i)
     cursor.execute(query)
     fetched_data = cursor.fetchall()
     
+    #채권 펀드 가져오기 쿼리
+    query = get_two_bonds(user_id)
+    cursor.execute(query)
+    fetched_data2 = cursor.fetchall()
+    
+    for elem in fetched_data2 :
+        fetched_data.append(elem)
+    # print(fetched_data)
+    # print(fetched_data2)
+    # print()
+    
     data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
-    result = {"user_class" : category_mapping[user_class+i],"funds" : data_dict}
+    result = {"fund_class" : category_mapping[user_class+i],"funds" : data_dict}
     return result
 
 @mydata.route('/fundss',methods=['POST'])
