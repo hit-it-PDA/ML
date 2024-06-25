@@ -6,26 +6,42 @@ import dart_fss as DART
 import pandas as pd
 import OpenDartReader
 import requests
+import sys
 
 load_dotenv()
 
 dart = Blueprint('dart', __name__)
-
 dart_key = os.getenv('dart_key')
 
+# DART부르기 위한 객체 생성
 DART.set_api_key(api_key=dart_key)
 DART = OpenDartReader(dart_key)
 
 @dart.route('/info',methods=['POST'])
-def get_rev_income():
-    print("/dart/info")
+def get_rev_income(): 
+    print('dart/info')   
     data = request.json
-    stock_code = data['stock_code']
+    stock_name = data['stock_name']
+    
+    connection = g.connection
+    cursor = connection.cursor()
+    
+    #종목이름을 코드로 변환하기 위해 종목 코드 찾기
+    cursor.execute(f"select stock_code from stocks_products where name='{stock_name}'")
+    row = cursor.fetchone()
+    if row :
+        stock_code = row[0]
+    else :
+        return jsonify({"response" : None})
+    
+    print(f"converted to {stock_code}")
     rev, income = rev_income(stock_code)
+    
     if rev == None and income == None : 
         rev, income = rev_income2(stock_code)
     return jsonify({"response" : {"rev" : rev, "income" : income}})
 
+# 종목 코드를 배열로 받기
 @dart.route('/infos',methods=['POST'])
 def get_rev_incomes():
     print("/dart/info")
@@ -45,9 +61,8 @@ def get_rev_incomes():
     return jsonify({"response" : {"infos" : infos}})
 
 def rev_income(code):
-    print("금감원 호출띠")
+    print("call_rev_income")
     try : 
-        pritn(DART.finstate(corp=code, bsns_year=2023))
         returned = DART.finstate(corp=code, bsns_year=2023).iloc[9:11]
         매출 = returned.iloc[0,]['thstrm_amount']
         영업이익 = returned.iloc[1,]['thstrm_amount']
@@ -59,7 +74,7 @@ def rev_income(code):
     
 
 def rev_income2(code):
-    print("네이버 호출띠")
+    print("call_rev_income2")
     url = f'https://m.stock.naver.com/api/stock/{code}/finance/annual'
     # url = f'https://m.stock.naver.com/api/stock/133820/finance/annual'
     try : 
@@ -72,7 +87,6 @@ def rev_income2(code):
         영업이익 = int(영업이익.replace(",", ""))* 100000000
         
         return 매출, 영업이익
-        # print(매출, 영업이익)
     except :    
-        print("응 니애미")
+        print("can't find rev")
         return None, None
