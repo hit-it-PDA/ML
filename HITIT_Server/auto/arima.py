@@ -38,7 +38,7 @@ for code in codes:
     WHERE fund_code = '{code}'
         AND (DATE(arima_update) IS NULL OR DATE(arima_update) <> NOW());
     """
-    # cursor.execute(query)
+    cursor.execute(query)
     
     if cursor.rowcount == 0:
         print(f"No rows updated for fund code {code}")
