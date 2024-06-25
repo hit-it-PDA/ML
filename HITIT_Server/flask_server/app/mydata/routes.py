@@ -1,6 +1,14 @@
 from flask import Blueprint,jsonify,g,request
 from datetime import datetime
 from collections import defaultdict
+import sys
+import os
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(current_dir)
+
+sys.path.append(parent_dir)
+
+from dart.routes import rev_income, rev_income2
 
 mydata = Blueprint('mydata', __name__)
 
@@ -15,6 +23,15 @@ fund_column_names = [
     'return_5y', 'return_idx', 'return_ytd', 'arima_price', 'arima_update',
     'arima_percent', "stock_ratio", "bond_ratio"
 ]
+
+@mydata.route('/ttest',methods=['POST'])
+def ttest():
+    data = request.json
+    stock_code = data['stock_code']
+    rev, income = rev_income(stock_code)
+    if rev == None and income == None : 
+        rev, income = rev_income2(stock_code)
+    return jsonify({"response" : {"rev" : rev, "income" : income}})
 
 def funds_query_by_id(level, user_id, rand) : 
     #9개 열 기준
