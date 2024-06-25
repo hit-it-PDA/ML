@@ -16,3 +16,5 @@ myenv/
 dist/
 build/
 .venv
+
+docs_cache
