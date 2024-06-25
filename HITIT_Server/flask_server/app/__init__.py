@@ -31,10 +31,14 @@ def create_app():
         g.connection = connection
 
     from .ml.routes import ml
-    from .rebel.routes import mydata
-    from .rebal.routes import rebel
+    from .mydata.routes import mydata
+    from .rebal.routes import rebal
+    from .dart.routes import dart
     
     app.register_blueprint(ml, url_prefix = "/ml")
     app.register_blueprint(mydata, url_prefix = "/mydata")
+    app.register_blueprint(rebal, url_prefix = "/rebal")
+    app.register_blueprint(dart, url_prefix = "/dart")
+    
     
     return app

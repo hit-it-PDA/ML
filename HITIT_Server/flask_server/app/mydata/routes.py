@@ -1,4 +1,6 @@
 from flask import Blueprint,jsonify,g,request
+from datetime import datetime
+from collections import defaultdict
 
 mydata = Blueprint('mydata', __name__)
 
@@ -17,29 +19,6 @@ fund_column_names = [
 def funds_query_by_id(level, user_id, rand) : 
     #9개 열 기준
     order_list = ['return_1m','return_3m','return_6m','return_1y','return_3y','return_5y','return_idx','return_ytd','arima_percent']
-    
-    # query =f'''
-    #     WITH RankedProducts AS (
-    #         SELECT *,
-    #             ROW_NUMBER() OVER (PARTITION BY company_name ORDER BY {order_list[user_id % 9]} DESC) AS rn
-    #         FROM fund_products_4
-    #         WHERE risk_grade >= {level}  AND company_name <> '신한자산운용'
-    #     )
-    #     SELECT *
-    #     FROM (
-    #         SELECT *
-    #         FROM RankedProducts
-    #         WHERE rn = 1
-
-    #         UNION ALL
-
-    #         SELECT * , 1 as rn
-    #         FROM fund_products_4
-    #         WHERE risk_grade >= {level} AND company_name = '신한자산운용'
-    #     ) AS CombinedResults
-    #     ORDER BY {order_list[user_id % 9]} DESC
-    #     LIMIT 5;
-    #     '''
     query = f"""
     WITH RankedProducts AS (
         SELECT *,
@@ -74,10 +53,6 @@ def funds_query_by_id(level, user_id, rand) :
 
     """
     return query
-
-@mydata.route('/',methods=['POST'])
-def main():
-    return jsonify({'result': "hi"})
 
 @mydata.route('/funds',methods=['POST'])
 def getFunds():
@@ -197,6 +172,19 @@ def fetchs_funds(user_class, user_id, i, cursor):
     result = {"fund_class" : category_mapping[user_class+i],"funds" : data_dict}
     return result
 
+def get_user_test_class(score):
+    if score <= 8:
+        return 5
+    elif score <= 16 :
+        return 4
+    elif score <= 24 :
+        return 3
+    elif score <=32 :
+        return 2
+    else :
+        return 1
+
+
 @mydata.route('/fundss',methods=['POST'])
 def getFund() :
     print("mydata/fundss")
@@ -226,10 +214,55 @@ def getFund() :
             result = fetchs_funds(user_class, user_id, 0 , cursor)
             result_data.append(result)    
         
-        
     return jsonify({"response" : result_data})
 
 
+@mydata.route('/fund/test',methods=['POST'])
+def getFundsByTest():
+    print("mydata/funds/test")
+    data = request.json
+    user_id = data['user_id']
+    user_test_score = data['user_test_score']
+    user_test_class = get_user_test_class(user_test_score)
+    
+    transactions, stockBalance, age,  wealth = data['transactions'], data['stockBalance'], data['age'],data['wealth']
+
+    classmodel = g.classmodel
+    connection = g.connection
+    cursor = connection.cursor()
+    
+    avg_per = calculate_average_per(stockBalance,cursor)
+    # avg_per = 12
+    
+    avg_trans_gap = calculate_average_holding_period(transactions)
+    # avg_trans_gap = 20
+    
+    returned = classmodel.predict([[age,wealth,len(transactions),avg_per, avg_trans_gap]])
+    
+    user_class = returned.tolist()[0] + 1
+    print(f"age : {age}, wealth : {wealth}, # of trans : {len(transactions)}, avg_per : {avg_per}, avg_trans_gap : {avg_trans_gap}")
+    print(f"score : {user_test_score}, test_class : {user_test_class}, user_class :{user_class}")
+    
+    user_class = (user_class + user_test_class ) // 2
+
+    result_data = []
+    if user_class <= 3: #유저가 1,2,3이라면
+        for i in range(3) :
+            result = fetchs_funds(user_class, user_id, i,cursor)
+            result_data.append(result)
+    elif user_class == 4:
+        for i in range(2):
+            result = fetchs_funds(user_class, user_id, i,cursor)
+            result_data.append(result)
+        for i in range(1):
+            result = fetchs_funds(user_class, user_id, i, cursor)
+            result_data.append(result)       
+    else :
+        for i in range(3):
+            result = fetchs_funds(user_class, user_id, 0 , cursor)
+            result_data.append(result)    
+        
+    return jsonify({"response" : result_data})
 
 #유저스타일 분류해주는 DB
 @mydata.route('/style/<user_id>',methods=['GET'])
@@ -309,21 +342,17 @@ def fund_test_recommendation(user_id):
     return jsonify({"result" : data_dict})
 
 
-
-from datetime import datetime
-from collections import defaultdict
-
 def calculate_average_per(stocks, cursor):
     stock_pers = []
     for stock in stocks:
-        print(stock)
+        # print(stock)
         query = f"select per from stocks_products_details where stock_code = '{stock}' limit 1" 
         cursor.execute(query)
         row = cursor.fetchone()
         stock_pers.append(row[0])
-    print(stock_pers)
+    # print(stock_pers)
     avg_per = round( sum(stock_pers)/len(stock_pers),2 )
-    print(avg_per)
+    # print(avg_per)
 
     if avg_per < 0 :
         return 0
