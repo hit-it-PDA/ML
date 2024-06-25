@@ -6,6 +6,7 @@ import os
 classmodel = None
 connection = None
 
+
 def create_app():
     print("__init__ in 'app' directory")
     app = Flask(__name__)
@@ -34,6 +35,9 @@ def create_app():
     from .mydata.routes import mydata
     from .rebal.routes import rebal
     from .dart.routes import dart
+
+
+    # cache = setup_cache(app)
     
     app.register_blueprint(ml, url_prefix = "/ml")
     app.register_blueprint(mydata, url_prefix = "/mydata")
