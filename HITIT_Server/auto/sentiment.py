@@ -36,6 +36,7 @@ def insert_bad_news(code, title, url) :
     """
     # print(query)
     cursor.execute(query)
+    cursor.close()
     connection.commit()
     print(f"insert 성공 , {code}")
     return
@@ -43,10 +44,11 @@ def insert_bad_news(code, title, url) :
 # query = "select stock_code,name from stocks_products where (DATE(sentiment_update) IS NULL OR DATE(sentiment_update) <> DATE(NOW()))"
 query = "select stock_code,name from stocks_products where bad_news_title is null"
 cursor.execute(query)
-
 rows = cursor.fetchall()
 print(len(rows))
 stocks = [ elem[:2] for elem in rows] #(종목코드, 종목명 가져와보리기) DB에서
+cursor.close()
+# connection.close()
 
 current_date = datetime.now().strftime("%Y.%m.%d")
 
@@ -108,4 +110,4 @@ for elem in stocks:
         print(f"PASS {keyword}")
         continue
         
-connection.close()
+# connection.close()

@@ -56,6 +56,10 @@ def fetch_prices(cursor, code, kind):
     rows = cursor.fetchall()
     for row in rows:
         data.append(row)
+    
+    cursor.close()
+    connection.close()  
+    
     df = pd.DataFrame(data, columns=['date', 'price'])
     df['date'] = pd.to_datetime(df['date'])
     df.set_index('date', inplace=True)

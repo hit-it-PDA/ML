@@ -34,31 +34,36 @@ def fund_price_crawl(code) :
         response = requests.get(url, headers={'Content-Type': 'application/json'})
         data = response.json()['Data'][0]
         price_data.extend(data)
-    
-    for elem in price_data:
-        date, price = elem['TRD_DT'],elem['STD_PRC']
+    # print(price_data)
+    for elem in price_data[:3]:
+        # print(elem)
+        date, price = elem['TRD_DT'], elem['STD_PRC']
         date = date.replace(".","-")
+        # print(date)
         query = f"""INSERT INTO fund_prices (fund_code, Date, price) VALUES ('{code}', '{date}', {str(price).replace(",","")})"""
-        print(query)
-        if date != '2024-06-21':
-            continue
+        # print(query)
+        # if date != '2024-06-21':
+        #     continue
         try : 
             cursor.execute(query)
             print(f"insert Success {code} : {date} ")
-            # print(query)
+            print(query)
         except :
             print("failed insert")
         connection.commit()
-        break
+        print(date)
+        date1 = datetime.strptime(date.replace("-","."), '%Y.%m.%d')
+        if date1 < datetime.strptime("2024.06.20", '%Y.%m.%d'):
+            break
 
 cursor.execute("select fund_code from fund_products_4")
 codes = cursor.fetchall()
 
 codes = [elem[0] for elem in codes]
-print(codes)
+# print(codes)
 
 for code in codes:
     fund_price_crawl(code)
 
 cursor.close()
-connection.close()
+# connection.close()

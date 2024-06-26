@@ -13,6 +13,9 @@ cursor = connection.cursor()
 #종목 분석할 종목들 불러오기(펀드 코드)
 cursor.execute("select fund_code from fund_products_4 where (DATE(arima_update) IS NULL OR DATE(arima_update) <> DATE(NOW()))")
 codes = cursor.fetchall()
+cursor.close()
+connection.close()
+
 codes = [ elem[0] for elem in codes]
 
 from arima_func import get_arima_predict
@@ -39,6 +42,8 @@ for code in codes:
         AND (DATE(arima_update) IS NULL OR DATE(arima_update) <> NOW());
     """
     cursor.execute(query)
+    cursor.close()
+    connection.close()
     
     if cursor.rowcount == 0:
         print(f"No rows updated for fund code {code}")

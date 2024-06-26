@@ -19,7 +19,7 @@ DART = OpenDartReader(dart_key)
 
 @dart.route('/info',methods=['POST'])
 def get_rev_income(): 
-    print('dart/info')   
+    # print('dart/info')   
     data = request.json
     stock_name = data['stock_name']
     
@@ -29,6 +29,10 @@ def get_rev_income():
     #종목이름을 코드로 변환하기 위해 종목 코드 찾기
     cursor.execute(f"select stock_code from stocks_products where name='{stock_name}'")
     row = cursor.fetchone()
+    # cursor.close()
+    # connection.close()
+
+    # cursor.
     if row :
         stock_code = row[0]
     else :
@@ -44,7 +48,7 @@ def get_rev_income():
 # 종목 코드를 배열로 받기
 @dart.route('/infos',methods=['POST'])
 def get_rev_incomes():
-    print("/dart/info")
+    # print("/dart/info")
     data = request.json
     
     infos = []
@@ -61,7 +65,7 @@ def get_rev_incomes():
     return jsonify({"response" : {"infos" : infos}})
 
 def rev_income(code):
-    print("call_rev_income")
+    # print("call_rev_income")
     try : 
         returned = DART.finstate(corp=code, bsns_year=2023).iloc[9:11]
         매출 = returned.iloc[0,]['thstrm_amount']
@@ -74,7 +78,7 @@ def rev_income(code):
     
 
 def rev_income2(code):
-    print("call_rev_income2")
+    # print("call_rev_income2")
     url = f'https://m.stock.naver.com/api/stock/{code}/finance/annual'
     # url = f'https://m.stock.naver.com/api/stock/133820/finance/annual'
     try : 
