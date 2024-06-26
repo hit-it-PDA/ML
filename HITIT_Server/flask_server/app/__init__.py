@@ -11,6 +11,7 @@ def create_app():
     print("__init__ in 'app' directory")
     app = Flask(__name__)
     
+    app.debug = True
     # 애플리케이션 초기화 시 한 번만 모델 로드
     global classmodel
     global connection
