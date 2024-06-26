@@ -14,11 +14,15 @@ from dart.routes import rev_income, rev_income2
 rebal = Blueprint('rebal', __name__)
 
 def normalize_weights(weights, ignore_indices=None):
+    print()
+    print()
+    print("in function~")
+    print(weights)
     if ignore_indices is None:
-        # 기본 정규화 수행
         total_sum = sum(weights)
         normalized_weights = [round(w / total_sum, 3) for w in weights]
-        
+        print("normalize")
+        print(normalized_weights)
     else:
         # 무시할 인덱스를 고려한 정규화 수행
         print(weights, ignore_indices)
@@ -48,7 +52,7 @@ def get_sentiment_stock(code):
         fund_stocks fs
     JOIN
         stocks_products sp ON fs.stock_name = sp.name
-    WHERE
+    WHERE   
         fs.fund_code = '{code}';
     """
     
@@ -72,13 +76,14 @@ def getUserClass():
     # 펀드 1개당 종목 : sentiment 담기
     sentiment_infos = []
     count_positive = []
-    
+    print("wegihtss", weights)
     for i in range(num_of_stock_funds):
         fund_code = fund_codes[i]
         # print(f"----------------{fund_code}-----------------")
         query = get_sentiment_stock(fund_code)
         cursor.execute(query)
         rows = cursor.fetchall()
+        
         sentiment_info = []
         
         positive = 0
@@ -101,16 +106,48 @@ def getUserClass():
             
     for funds in sentiment_infos:
         fund_idx = sentiment_infos.index(funds)
+        print("fund idx" , fund_idx)
         print(f"fund_idx : {fund_idx}")
         # if len(funds) <= 3 :
-        if count_positive[fund_idx] <= 100  and fund_idx not in overseas_indexs :
-            # if overseas_indexs :
-            #     weights = [ weight for weight in weights ]
-            #     weights = normalize_weights(weights,overseas_indexs)
-            # else :
-            #     weights = [ weight + 0.01 for weight in weights]
-            #     weights[fund_idx] -= 0.05
-                weights = normalize_weights(weights)
+        if count_positive[fund_idx] <= 3 :
+            # if fund_idx not in overseas_indexs :
+                # print("normalize")
+            if overseas_indexs and fund_idx not in overseas_indexs:
+                # weights = [ weight+0.01 for weight in weights ]
+                # print(weight[])
+                temp = 0
+                for i in range((num_of_stock_funds)):
+                    if i not in overseas_indexs :
+                        temp += 1
+                        
+                weights[fund_idx] -= 0.01 * temp
+                
+                for i in range(num_of_stock_funds):
+                    if i not in overseas_indexs:
+                        weights[i] += 0.01
+                print(weights)
+                normalize_weights(weights, overseas_indexs)
+            else :
+                #     weights = normalize_weights(weights,overseas_indexs)
+                # else :
+                temp = 0
+                for i in range((num_of_stock_funds)):
+                    if i not in overseas_indexs and count_positive[i] <= 3:
+                    # if i not in overseas_indexs:
+                        temp += 1
+                print("temp : ",temp)
+                weights[fund_idx] -= 0.01 * temp
+                
+                for i in range(num_of_stock_funds):
+                    if i not in overseas_indexs and count_positive[i] <= 3:
+                    # if i not in overseas_indexs:
+                        weights[i] += 0.01
+                print("weighttttttttttttt", weights)
+                # weights = [ weight + 0.01 for weight in weights]
+                # weights[fund_idx] -= 0.05
+                # print(weights)
+                weights = normalize_weights(weights,overseas_indexs)
+                print(weights)
             # print(weights)
         else :
             # sentiment_infos.remove(funds)
