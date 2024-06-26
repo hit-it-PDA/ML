@@ -82,15 +82,15 @@ def getFunds():
     classmodel = g.classmodel
     connection = g.connection
     cursor = connection.cursor()
-    
+    # print(data)
+    # print(transactions)
     avg_per = calculate_average_per(stockBalance,cursor)
     # avg_per = 12
-    
     avg_trans_gap = calculate_average_holding_period(transactions)
     # avg_trans_gap = 20
     
     returned = classmodel.predict([[age,wealth,len(transactions),avg_per, avg_trans_gap]])
-    
+    print("returend", returned)
     user_class = returned.tolist()[0] + 1
     print("user_class : ", user_class)
     result_data = []
@@ -114,17 +114,18 @@ def getFunds():
 
 
 def get_two_bonds(user_id):
+    # print(f"get two bonds {user_id}")
     order_list = ['return_1m','return_3m','return_6m','return_1y','return_3y','return_5y','return_idx','return_ytd','arima_percent']
-    query =f"""
+    query =f"""\
     WITH company_funds AS (
-    SELECT *, ROW_NUMBER() OVER (PARTITION BY company_name ORDER BY {order_list[user_id]} DESC) as row_num
+    SELECT *, ROW_NUMBER() OVER (PARTITION BY company_name ORDER BY {order_list[user_id % 9]} DESC) as row_num
     FROM fund_products_4
     WHERE risk_grade = 6 AND bond_ratio = 100 AND company_name <> '신한자산운용'
     )
     SELECT *
     FROM company_funds
     WHERE row_num = 1
-    ORDER BY {order_list[user_id]} DESC
+    ORDER BY {order_list[user_id % 9]} DESC
     LIMIT 2;
     """
     return query
@@ -180,6 +181,7 @@ def fetchs_funds(user_class, user_id, i, cursor):
     query = get_two_bonds(user_id)
     cursor.execute(query)
     fetched_data2 = cursor.fetchall()
+    # cursor.close()
     
     for elem in fetched_data2 :
         fetched_data.append(elem)
@@ -230,15 +232,16 @@ def getFund() :
         for i in range(3):
             result = fetchs_funds(user_class, user_id, 0 , cursor)
             result_data.append(result)    
-        
+            
+    # print(result_data)
     return jsonify({"response" : result_data})
 
-
-@mydata.route('/fund/test',methods=['POST'])
+@mydata.route('/funds/test',methods=['POST'])
 def getFundsByTest():
     print("mydata/funds/test")
     data = request.json
     user_id = data['user_id']
+    print(user_id)
     user_test_score = data['user_test_score']
     user_test_class = get_user_test_class(user_test_score)
     
@@ -292,6 +295,8 @@ def style(user_id):
     
     cursor.execute(f"select user_id, investment_style, investment_style_class, investment_test_class  from user_style where user_id = {user_id}")
     fetched_data = cursor.fetchall()
+    # cursor.close()
+    # connection.close()
     
     data_dict = [dict(zip(column_names, row)) for row in fetched_data]
     print(data_dict)
@@ -316,6 +321,9 @@ def fund_mydata_recommendation(user_id):
     
     cursor.execute(query)
     fetched_data = cursor.fetchall()
+    # cursor.close()
+    # connection.close()
+    
     data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
     
     return jsonify({"result" : data_dict})
@@ -330,6 +338,8 @@ def fund_test_recommendation(user_id):
     cursor.execute("select investment_test_class from user_style")
     row = cursor.fetchone()
     
+    # cursor.close()
+    # connection.close()
     query =f'''
     WITH RankedProducts AS (
         SELECT *,
@@ -353,6 +363,9 @@ def fund_test_recommendation(user_id):
     LIMIT 5;
     '''
     cursor.execute(query)
+    # cursor.close()
+    # connection.close()
+    
     fetched_data = cursor.fetchall()
 
     data_dict = [dict(zip(fund_column_names, row)) for row in fetched_data]
@@ -361,14 +374,20 @@ def fund_test_recommendation(user_id):
 
 def calculate_average_per(stocks, cursor):
     stock_pers = []
+    print("sssssssssssssssssssssssssssssssssssss")
     for stock in stocks:
-        # print(stock)
+        print(stock)
         query = f"select per from stocks_products_details where stock_code = '{stock}' limit 1" 
         cursor.execute(query)
         row = cursor.fetchone()
-        stock_pers.append(row[0])
+        if row is not None :
+            # row = [10]
+            stock_pers.append(row[0])
     # print(stock_pers)
-    avg_per = round( sum(stock_pers)/len(stock_pers),2 )
+    if len(stock_pers) != 0:
+        avg_per = round( sum(stock_pers)/len(stock_pers),2 )
+    else :
+        return 10
     # print(avg_per)
 
     if avg_per < 0 :
